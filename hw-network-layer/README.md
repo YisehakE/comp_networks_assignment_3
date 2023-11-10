@@ -119,11 +119,19 @@ option).
        suspect will happen when you attempt to send an IP datagram from `a` to
        `b` (10.0.0.2)?
 
+       * **Answer**: I suspect that there will be an error since there is no link defined for 
+               prefix 10.0.0.2 and there is no default link if prefix doesn't exist.
+
     b. Given the current contents of the IP forwarding table, what do you
        suspect will happen when you attempt to send an IP datagram from `a` to
        `c` (10.0.1.2)?
 
+       * **Answer**: I suspect that there will be an error since there is no link defined for 
+               prefix 10.0.1.2 and there is no default link if prefix doesn't exist.
+
+
     c. What are the current contents of `a`'s ARP table?
+       * **Answer**: The IP address of 10.0.0.1 pointing to the MAC address b6:6c:89:32:78:2a
 
 
  2. Now run the following command on `a` to send a single packet from `a` to
@@ -270,6 +278,9 @@ option).
      ```
 
      Hint: neither should work.
+
+
+     Answer: 
 
  11. Take a look at the forwarding table entries for `r1` and `r2`.  Note that
      they only have entries for the subnets for which they have interfaces.
