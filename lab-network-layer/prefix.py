@@ -1,35 +1,35 @@
 '''
 Test the Prefix.__contains__() method
 >>> '10.20.0.1' in Prefix('10.20.0.0/23')
-False
+True
 >>> '10.20.1.0' in Prefix('10.20.0.0/23')
-False
+True
 >>> '10.20.1.255' in Prefix('10.20.0.0/23')
-False
+True
 >>> '10.20.2.0' in Prefix('10.20.0.0/23')
 False
 >>> '10.20.0.1' in Prefix('10.20.0.0/24')
-False
+True
 >>> '10.20.0.255' in Prefix('10.20.0.0/24')
-False
+True
 >>> '10.20.1.0' in Prefix('10.20.0.0/24')
 False
 >>> '10.20.0.1' in Prefix('10.20.0.0/25')
-False
+True
 >>> '10.20.0.127' in Prefix('10.20.0.0/25')
-False
+True
 >>> '10.20.0.128' in Prefix('10.20.0.0/25')
 False
 >>> '10.20.0.1' in Prefix('10.20.0.0/26')
-False
+True
 >>> '10.20.0.63' in Prefix('10.20.0.0/26')
-False
+True
 >>> '10.20.0.64' in Prefix('10.20.0.0/26')
 False
 >>> '10.20.0.1' in Prefix('10.20.0.0/27')
-False
+True
 >>> '10.20.0.31' in Prefix('10.20.0.0/27')
-False
+True
 >>> '10.20.0.32' in Prefix('10.20.0.0/27')
 False
 '''
@@ -136,8 +136,8 @@ def ip_prefix_mask(family, prefix_len):
     '0b11111111111111111111111111111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000'
     '''
 
-    #FIXME
-    return 0
+    isIPv4 = family == socket.AF_INET
+    return all_ones(prefix_len) << (32 - prefix_len) if isIPv4 else all_ones(prefix_len) << (128 - prefix_len) 
 
 def ip_prefix(address, family, prefix_len):
     '''Return the prefix for the given IP address, address family, and
@@ -167,9 +167,8 @@ def ip_prefix(address, family, prefix_len):
     >>> hex(ip_prefix(0x20010db80000ffffffffffffffffffff, socket.AF_INET6, 64))
     '0x20010db80000ffff0000000000000000'
     '''
-
-    #FIXME
-    return 0
+    mask = ip_prefix_mask(family, prefix_len) 
+    return address & mask 
 
 def ip_prefix_total_addresses(family, prefix_len):
     '''Return the total number IP addresses (_including_ the first and
@@ -192,8 +191,8 @@ def ip_prefix_total_addresses(family, prefix_len):
     256
     '''
 
-    #FIXME
-    return 0
+    isIPv4 = family == socket.AF_INET
+    return all_ones(32 - prefix_len) + 1 if isIPv4 else all_ones(128 - prefix_len) + 1
 
 def ip_prefix_nth_address(prefix, family, prefix_len, n):
     '''Return the nth IP address within the prefix specified with the given
@@ -226,7 +225,10 @@ def ip_prefix_nth_address(prefix, family, prefix_len, n):
     '''
 
     #FIXME
-    return 0
+
+    mask = ip_prefix_mask(family, prefix_len)
+
+    return prefix | n
 
 def ip_prefix_last_address(prefix, family, prefix_len):
     '''Return the last IP address within the prefix specified with the given
@@ -258,8 +260,8 @@ def ip_prefix_last_address(prefix, family, prefix_len):
     '0x20010db800000000ffffffffffffffff'
     '''
 
-    #FIXME
-    return 0
+    remaining_bits = 32 - prefix_len if family == socket.AF_INET else 128 - prefix_len
+    return ip_prefix_nth_address(prefix, family, prefix_len, 2**remaining_bits - 1)
 
 
 class Prefix:
@@ -303,14 +305,15 @@ class Prefix:
             family = socket.AF_INET6
         else:
             family = socket.AF_INET
+
         if family != self.family:
             raise ValueError('Address can only be tested against prefix of ' + \
                     'the same address family.')
-
+    
         address = ip_str_to_int(address)
-
-        #FIXME
-        return False
+        address_prefix = ip_prefix(address, family, self.prefix_len)
+      
+        return address_prefix == self.prefix 
 
     def __hash__(self):
         return hash((self.prefix, self.prefix_len))
