@@ -112,7 +112,7 @@ class Host(BaseHost):
       if pkt.pdst == intf_info.ipv4_addrs[0]:
         self._arp_table[pkt.psrc] = pkt.hwsrc
 
-        sender_ip, target_ip= pkt.pdst, pkt.psrc # Reversed the sender & target ips
+        sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
@@ -135,8 +135,8 @@ class Host(BaseHost):
       intf_info = self.int_to_info.get(intf) # Type - InterfaceInfo
 
       # TODO: determine if these are in correct form (i.e byte OR string)
-      sender_ip = intf_info.ipv4_addrs[0], sender_mac = intf_info.mac_addr
-      target_ip = next_hop, target_mac = DEFAULT_TARGET_MAC
+      sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
+      target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
 
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
