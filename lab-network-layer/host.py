@@ -180,7 +180,7 @@ class Host(BaseHost):
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
     return ARP(
-                hwtype=ETH_P_ARP, 
+                hwtype=ARPHRD_ETHER, 
                 ptype=ETH_P_IP, 
                 hwlen=ARP_ADDR_SZ,
                 plen=IPV4_ADDR_SZ,
