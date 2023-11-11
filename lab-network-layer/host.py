@@ -126,7 +126,6 @@ class Host(BaseHost):
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
       dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
       type_ip = ETH_P_IP
-
       frame = self.create_eth_frame(dst_mac_addr, type_ip, ETH_P_IP, pkt)
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
@@ -147,7 +146,7 @@ class Host(BaseHost):
 
       # Step 3: send frame & queue this packet along with interface & next_hop ip addr
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
-      self.send_queue.append((pkt, intf, next_hop))
+      self.pending.append((pkt, intf, next_hop))
 
   def send_packet(self, pkt: bytes) -> None:
       print(f'Attempting to send packet:\n{repr(pkt)}')
