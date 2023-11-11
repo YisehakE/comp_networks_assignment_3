@@ -34,7 +34,7 @@ import struct
 
 # Additional constants I included
 BROADCAST_MAC = "ff:ff:ff:ff:ff:ff" 
-DEFAULT_TARGET_MAC = b'x00/x00/x00/x00/x00/x00' 
+DEFAULT_TARGET_MAC = "00:00:00:00:00:00"
 ARP_ADDR_SZ = 6
 IPV4_ADDR_SZ = 4
 
