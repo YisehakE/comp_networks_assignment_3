@@ -113,7 +113,7 @@ class Host(BaseHost):
         self._arp_table[pkt.psrc] = pkt.hwsrc
 
         sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
-        sender_mac, target_mac = intf.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
+        sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
         frame = self.create_eth_frame(target_mac, pkt.hwsrc, ETH_P_ARP, arp_resp) # TODO: figure out if payload needs to be raw bytes
