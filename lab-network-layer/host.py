@@ -132,7 +132,7 @@ class Host(BaseHost):
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
     else: # Build ethernet frame with ARP request
       # Step 1: create ARP request from interface info
-      intf_info = self.int_to_into.get(intf) # Type - InterfaceInfo
+      intf_info = self.int_to_info.get(intf) # Type - InterfaceInfo
 
       # TODO: determine if these are in correct form (i.e byte OR string)
       sender_ip = intf_info.ipv4_addrs[0], sender_mac = intf_info.mac_addr
