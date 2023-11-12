@@ -15,16 +15,14 @@ from forwarding_table_native import ForwardingTableNative as ForwardingTable
 
 class DVRouter(BaseHost):
     def __init__(self):
-        super().__init__()
-
+        super(DVRouter, self).__init__()
+        ''' You may need to use these to fill in the TODOs below'''
         self.my_dv = {}
         self.neighbor_dvs = {}
-
         self.forwarding_table = ForwardingTable()
-
         self._initialize_dv_sock()
-
-        # Do any further initialization here
+        self._link_down_alarm = {}
+        self._neighbor_name_to_ip = {}
 
     def _initialize_dv_sock(self) -> None:
         '''Initialize the socket that will be used for sending and receiving DV
@@ -46,9 +44,6 @@ class DVRouter(BaseHost):
         # as they come in
         loop.add_reader(self.sock, self._handle_msg, self.sock)
 
-        # Initialize our DV -- and optionally send our DV to our neighbors
-        self.update_dv()
-
         # Schedule self.send_dv_next() to be called in 1 second and
         # self.update_dv_next() to be called in 0.5 seconds.
         loop.call_later(DV_TABLE_SEND_INTERVAL, self.send_dv_next)
@@ -69,7 +64,24 @@ class DVRouter(BaseHost):
         self.sock.sendto(msg, (dst, DV_PORT))
 
     def handle_dv_message(self, msg: bytes) -> None:
-        pass
+        d = json.loads(msg.decode('utf-8'))
+        '''TODO: assign values to neighbor_name, neighbor_ip, and neighbor_dv'''
+        '''neighbor_name = '''
+        '''neighbor_ip = '''
+        
+        ''' End TODO'''
+        
+        if neighbor_name == self.hostname:
+            return
+
+        '''TODO: Assign values to self._neighbor_name_to_ip and self.neighbor_dvs '''
+
+        if neighbor_name in self._link_down_alarm:
+            '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
+        loop = asyncio.get_event_loop()
+
+        '''TODO: Fill in the appropriate arguments. Hint: there are 3. Pessimistically believing that I will never see this neighbor again. You might have to check the asyncio library.'''
+        '''self._link_down_alarm[neighbor_name] = loop.call_later()'''
 
     def send_dv_next(self):
         '''Send DV to neighbors, and schedule this method to be called again in
@@ -91,6 +103,7 @@ class DVRouter(BaseHost):
 
     def handle_down_link(self, neighbor: str):
         self.log(f'Link down: {neighbor}')
+        del self.neighbor_dvs[neighbor]
 
     def resolve_neighbor_dvs(self):
         '''Return a copy of the mapping of neighbors to distance vectors, with
@@ -118,7 +131,28 @@ class DVRouter(BaseHost):
         return resolved_dv
 
     def update_dv(self) -> None:
-        pass
+        forwarding_table = {}
+
+        # TODO: get neighboring costs
+        # neighbor_costs = 
+
+        # initialize DV with distance 0 to own IP addresses
+        dv = dict([(intinfo.ipv4_addrs[0], 0) \
+                for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs])
+
+        #TODO: Complete the for loop. NOTE: don't try to add a route for local
+        for neighbor in self.neighbor_dvs:
+
+        if dv == self.my_dv:
+            send_new_dv = False
+        else:
+            send_new_dv = True
+
+        self.my_dv = dv
+        if send_new_dv:
+            self.forwarding_table.flush()
+            for dst in forwarding_table:
+                self.forwarding_table.add_entry(dst, None, forwarding_table[dst])
 
     def bcast_for_int(self, intf: str) -> str:
         ip_int = ip_str_to_int(self.int_to_info[intf].ipv4_addrs[0])
@@ -128,7 +162,13 @@ class DVRouter(BaseHost):
         return bcast
 
     def send_dv(self) -> None:
-        print('Sending DV')
+        for intf in self.physical_interfaces:
+            d = { 'name': self.hostname,
+                    'ip': self.int_to_info[intf].ipv4_addrs[0],
+                    'dv': self.my_dv }
+            d_json = json.dumps(d).encode('utf-8')
+            bcast = self.bcast_for_int(intf)
+            self._send_msg(d_json, bcast)
 
 def main():
     router = DVRouter()
