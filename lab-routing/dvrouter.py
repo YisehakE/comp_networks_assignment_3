@@ -147,10 +147,6 @@ class DVRouter(BaseHost):
     #TODO: Complete the for loop. NOTE: don't try to add a route for local
   
     for neighbor in self.neighbor_dvs:
-      neighbor_ip = self._neighbor_name_to_ip(neighbor)  # TODO: might not need, may be IP already
-      neifghbor_prefix = ip_prefix(neighbor_ip, socket.AF_INET, 32) # TODO: might not need, 
-      # TODO: how to check if a neighbor is in local...
-
       min_dist = float("inf")
       min_neighbor = None
       for v, v_dv in self.neighbor_dvs[neighbor]:
