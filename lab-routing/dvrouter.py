@@ -149,7 +149,7 @@ class DVRouter(BaseHost):
     for neighbor in self.neighbor_dvs:
       min_dist = float("inf")
       min_neighbor = None
-      for v, v_dv in self.neighbor_dvs[neighbor]:
+      for v, v_dv in self.neighbor_dvs[neighbor].items():
         curr_cost = 1 + v_dv[neighbor]
         if curr_cost < min_dist:
           min_dist = curr_cost
