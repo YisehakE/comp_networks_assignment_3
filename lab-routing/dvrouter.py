@@ -69,9 +69,7 @@ class DVRouter(BaseHost):
     '''neighbor_ip = '''
     
     ''' End TODO'''
-
-    print(d)
-    neighbor_name, neighbor_ip, neighbor_dv = d.name, d.ip, d.dv
+    neighbor_name, neighbor_ip, neighbor_dv = d["name"], d["ip"], d["dv"]
     
     if neighbor_name == self.hostname:
         return
