@@ -30,7 +30,6 @@ IPPROTO_UDP = 17 # User Datagram Protocol
 
 
 from collections import deque
-import struct
 
 # Additional constants I included
 BROADCAST_MAC = "ff:ff:ff:ff:ff:ff" 
@@ -47,8 +46,25 @@ class Host(BaseHost):
       self._arp_table = {}
       self.pending = []
 
+      # TODO: Initialize self.fowarding_table
+	    self.forwarding_table = ForwardingTable()
+
+      routes = json.loads(os.environ['COUGARNET_ROUTES'])
+
+	    #TODO: Create a for loop to add entries into the forwarding table using prefix, intf, and next_hop
+	    #for prefix, intf, next_hop in routes:
+
+
+
+      for intf in self.physical_interfaces:
+            prefix = '%s/%d' % \
+                    (self.int_to_info[intf].ipv4_addrs[0],
+                            self.int_to_info[intf].ipv4_prefix_len)
+            self.forwarding_table.add_entry(prefix, intf, None)
+
 
       # do any additional initialization here
+
 
   def _handle_frame(self, frame: bytes, intf: str) -> None:
     eth = Ether(frame)
