@@ -76,7 +76,7 @@ class DVRouter(BaseHost):
 
     '''TODO: Assign values to self._neighbor_name_to_ip and self.neighbor_dvs '''
     self._neighbor_name_to_ip[neighbor_name] = neighbor_ip
-    self.neighbor_dvs = neighbor_dv
+    self.neighbor_dvs[neighbor_name] = neighbor_dv
 
     if neighbor_name in self._link_down_alarm:
         '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
