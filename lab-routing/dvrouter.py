@@ -70,6 +70,7 @@ class DVRouter(BaseHost):
     
     ''' End TODO'''
 
+    print(d)
     neighbor_name, neighbor_ip, neighbor_dv = d.name, d.ip, d.dv
     
     if neighbor_name == self.hostname:
@@ -160,14 +161,14 @@ class DVRouter(BaseHost):
           min_dist = curr_cost
           min_neighbor = v
 
-      forwarding_table[neighbor] = min_neighbor # TODO: figure out if this is what I do 
+      forwarding_table[self.hostname] = min_neighbor # TODO: figure out if this is what I do 
 
       if neighbor not in dv: 
         print("Neighbor not in DV's populated dict")
       else:
         print("Neighbor is in DV's populated dict")
 
-      dv[neighbor] = min_dist
+      dv[self.hostname] = min_dist
     
     if dv == self.my_dv:
       send_new_dv = False
