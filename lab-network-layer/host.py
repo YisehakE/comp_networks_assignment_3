@@ -12,7 +12,7 @@ from cougarnet.util import \
         ip_str_to_binary, ip_binary_to_str
 
 from forwarding_table import ForwardingTable
-from scapy.all import Ether, IP, ARP
+from scapy.all import Ether, IP, ARP, TCP, UDP
 
 # From /usr/include/linux/if_ether.h:
 ETH_P_IP = 0x0800 # Internet Protocol packet
@@ -53,6 +53,8 @@ class Host(BaseHost):
     for prefix, intf, next_hop in routes:
        self.forwarding_table.add_entry(prefix, intf, next_hop)
 
+    print(str(self.forwarding_table))
+
     for intf in self.physical_interfaces:
         prefix = '%s/%d' % \
                 (self.int_to_info[intf].ipv4_addrs[0],
@@ -82,6 +84,7 @@ class Host(BaseHost):
     #Parse out all destination IP address in the packet
     for intf1 in self.int_to_info:
         all_addrs += self.int_to_info[intf1].ipv4_addrs
+    print(str(all_addrs))
 
     #Determine if this host is the final destination for the packet, based on the destination IP address
     if ip.dst == '255.255.255.255' or ip.dst in all_addrs:
@@ -89,19 +92,26 @@ class Host(BaseHost):
       #Hint: For type TCP (IPPROTO_TCP = 6), call handle_tcp(), passing the full IP datagram, including header.
       #Hint: For type UDP (IPPROTO_UDP = 17), call handle_udp(), passing the full IP datagram, including header. Note that if the protocol is something other than TCP or UDP, you can simply ignore it.  
         
-        if ip.protocol == IPPROTO_TCP:
+        if ip.proto == IPPROTO_TCP:
+
+           print("IP Dst: ", ip.dst, " --> Interface: ", intf)
            self.handle_tcp(pkt)
-        elif ip.protocol == IPPROTO_UDP:
+        elif ip.proto == IPPROTO_UDP:
+           print("IP Dst: ", ip.dst, " --> Interface: ", intf)
+
            self.handle_udp(pkt)
     else:
       #TODO: If the destination IP address does not match any IP address on the system, and it is not the IP broadcast, then call not_my_packet(), passing it the full IP datagram and the interface on which it arrived.
       self.not_my_packet(pkt, intf)
     
   def handle_tcp(self, pkt: bytes) -> None:
+      pkt = TCP(pkt)
       
       pass
 
   def handle_udp(self, pkt: bytes) -> None:
+      pkt = UDP(pkt)
+
       pass
 
   def handle_arp(self, pkt: bytes, intf: str) -> None:
@@ -175,7 +185,7 @@ class Host(BaseHost):
       if intf is None:
           return
       
-      print("Prefix: ", ip.dst, " | Interface: ", intf, " | Next hop: ", next_hop)
+    #   print("Prefix: ", ip.dst, " | Interface: ", intf, " | Next hop: ", next_hop)
       self.send_packet_on_int(pkt, intf, next_hop)
 
   def forward_packet(self, pkt: bytes) -> None:
