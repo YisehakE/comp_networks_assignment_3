@@ -28,8 +28,7 @@ IPPROTO_ICMP = 1 # Internet Control Message Protocol
 IPPROTO_TCP = 6 # Transmission Control Protocol
 IPPROTO_UDP = 17 # User Datagram Protocol
 
-
-from collections import deque
+import json
 
 # Additional constants I included
 BROADCAST_MAC = "ff:ff:ff:ff:ff:ff" 
@@ -39,28 +38,26 @@ IPV4_ADDR_SZ = 4
 
 class Host(BaseHost):
   def __init__(self, ip_forward: bool):
-      super().__init__()
+    super().__init__()
 
-      # UPDATED FROM HOSTNEW !
-      self._ip_forward = ip_forward
-      self._arp_table = {}
-      self.pending = []
+    # UPDATED FROM HOSTNEW !
+    self._ip_forward = ip_forward
+    self._arp_table = {}
+    self.pending = []
 
-      # TODO: Initialize self.fowarding_table
-	    self.forwarding_table = ForwardingTable()
+    # TODO: Initialize self.fowarding_table
+    self.forwarding_table = ForwardingTable()
 
-      routes = json.loads(os.environ['COUGARNET_ROUTES'])
+    routes = json.loads(os.environ['COUGARNET_ROUTES'])
 
-	    #TODO: Create a for loop to add entries into the forwarding table using prefix, intf, and next_hop
-	    #for prefix, intf, next_hop in routes:
+    for prefix, intf, next_hop in routes:
+       self.forwarding_table.add_entry(prefix, intf, next_hop)
 
-
-
-      for intf in self.physical_interfaces:
-            prefix = '%s/%d' % \
-                    (self.int_to_info[intf].ipv4_addrs[0],
-                            self.int_to_info[intf].ipv4_prefix_len)
-            self.forwarding_table.add_entry(prefix, intf, None)
+    for intf in self.physical_interfaces:
+        prefix = '%s/%d' % \
+                (self.int_to_info[intf].ipv4_addrs[0],
+                self.int_to_info[intf].ipv4_prefix_len)
+        self.forwarding_table.add_entry(prefix, intf, None)
 
 
       # do any additional initialization here
@@ -91,12 +88,17 @@ class Host(BaseHost):
       #TODO: If the packet is destined for this host, based on the tests in the previous bullet, then call another method to handle the payload, depending on the protocol value in the IP header.
       #Hint: For type TCP (IPPROTO_TCP = 6), call handle_tcp(), passing the full IP datagram, including header.
       #Hint: For type UDP (IPPROTO_UDP = 17), call handle_udp(), passing the full IP datagram, including header. Note that if the protocol is something other than TCP or UDP, you can simply ignore it.  
-        pass
+        
+        if ip.protocol == IPPROTO_TCP:
+           self.handle_tcp(pkt)
+        elif ip.protocol == IPPROTO_UDP:
+           self.handle_udp(pkt)
     else:
       #TODO: If the destination IP address does not match any IP address on the system, and it is not the IP broadcast, then call not_my_packet(), passing it the full IP datagram and the interface on which it arrived.
-      pass
+      self.not_my_packet(pkt, intf)
     
   def handle_tcp(self, pkt: bytes) -> None:
+      
       pass
 
   def handle_udp(self, pkt: bytes) -> None:
@@ -172,6 +174,8 @@ class Host(BaseHost):
           next_hop = ip.dst
       if intf is None:
           return
+      
+      print("Prefix: ", ip.dst, " | Interface: ", intf, " | Next hop: ", next_hop)
       self.send_packet_on_int(pkt, intf, next_hop)
 
   def forward_packet(self, pkt: bytes) -> None:
