@@ -70,26 +70,23 @@ class DVRouter(BaseHost):
     
     ''' End TODO'''
 
-    neighbor_name, neighbor_ip, neighbor_dv = d.neighbor_name, d.neighbor_ip, d.neighbor_dv
+    neighbor_name, neighbor_ip, neighbor_dv = d.name, d.ip, d.dv
     
     if neighbor_name == self.hostname:
         return
 
     '''TODO: Assign values to self._neighbor_name_to_ip and self.neighbor_dvs '''
-
     self._neighbor_name_to_ip[neighbor_name] = neighbor_ip
-    del self.neighbor_dvs[neighbor_name]
     self.neighbor_dvs = neighbor_dv
 
     if neighbor_name in self._link_down_alarm:
         '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
-        
-        pass
+        self.neighbor_dvs[neighbor_name] = neighbor_dv # The router/link is back up and running
 
     loop = asyncio.get_event_loop()
 
     '''TODO: Fill in the appropriate arguments. Hint: there are 3. Pessimistically believing that I will never see this neighbor again. You might have to check the asyncio library.'''
-    self._link_down_alarm[neighbor_name] = loop.call_later(DV_TABLE_SEND_INTERVAL, )
+    self._link_down_alarm[neighbor_name] = loop.call_later(NEIGHBOR_CHECK_INTERVAL, self.handle_down_link, neighbor_name)
 
 
   def send_dv_next(self):
@@ -143,18 +140,35 @@ class DVRouter(BaseHost):
     forwarding_table = {}
 
     # TODO: get neighboring costs
-    neighbor_costs = None # UPDATE
+    neighbor_costs = 1
 
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
 
     #TODO: Complete the for loop. NOTE: don't try to add a route for local
+  
     for neighbor in self.neighbor_dvs:
+      neighbor_ip = self._neighbor_name_to_ip(neighbor)  # TODO: might not need, may be IP already
+      neifghbor_prefix = ip_prefix(neighbor_ip, socket.AF_INET, 32) # TODO: might not need, 
+      # TODO: how to check if a neighbor is in local...
 
-      dv = min(1 + self.resolve_dv(neighbor))
+      min_dist = float("inf")
+      min_neighbor = None
+      for v, v_dv in self.neighbor_dvs[neighbor]:
+        curr_cost = 1 + v_dv[neighbor]
+        if curr_cost < min_dist:
+          min_dist = curr_cost
+          min_neighbor = v
 
-      pass
+      forwarding_table[neighbor] = min_neighbor # TODO: figure out if this is what I do 
 
+      if neighbor not in dv: 
+        print("Neighbor not in DV's populated dict")
+      else:
+        print("Neighbor is in DV's populated dict")
+
+      dv[neighbor] = min_dist
+    
     if dv == self.my_dv:
       send_new_dv = False
     else:
