@@ -53,8 +53,6 @@ class Host(BaseHost):
     for prefix, intf, next_hop in routes:
        self.forwarding_table.add_entry(prefix, intf, next_hop)
 
-    print(str(self.forwarding_table))
-
     for intf in self.physical_interfaces:
         prefix = '%s/%d' % \
                 (self.int_to_info[intf].ipv4_addrs[0],
@@ -140,7 +138,7 @@ class Host(BaseHost):
       if pkt.pdst == intf_info.ipv4_addrs[0]:
         self._arp_table[pkt.psrc] = pkt.hwsrc
 
-        sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
+        sender_ip, target_ip = intf_info.ipv4_addrs[0], pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
@@ -153,8 +151,9 @@ class Host(BaseHost):
     if next_hop in self._arp_table: # Build ethernet frame right away
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
       dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
+      src_mac_addr = self.int_to_info[intf].mac_addr
       type_ip = ETH_P_IP
-      frame = self.create_eth_frame(dst_mac_addr, type_ip, ETH_P_IP, pkt)
+      frame = self.create_eth_frame(dst_mac_addr, src_mac_addr, type_ip, ETH_P_IP, pkt)
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
     else: # Build ethernet frame with ARP request
@@ -164,6 +163,7 @@ class Host(BaseHost):
       # TODO: determine if these are in correct form (i.e byte OR string)
       sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
       target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
+
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
 
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
