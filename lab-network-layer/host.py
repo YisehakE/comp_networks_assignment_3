@@ -151,12 +151,22 @@ class Host(BaseHost):
       target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
 
+      print("(REG) Send on int | arp req: ", str(arp_req))
+      print("(BYTES) Send on int | arp req: ", bytes(arp_req))
+      print("(TRANS) Send on int | arp packet from bytes to packet", str(ARP(bytes(arp_req))))
+
+
+
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
       dst_mac_addr = BROADCAST_MAC # TODO: determine correct form of mac address (i.e bytes or string)
       src_mac_addr = sender_mac
 
       frame = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_ARP, arp_req) # TODO: figure out if payload needs to be raw bytes
-      print(str(frame))
+      print("(REG) Send on int | Frame w/ arp req: ", str(frame))
+      print("(BYTES) Send on int | Frame w/ arp req: ", bytes(frame))
+      print("(TRANS) Send on int | Frame w/ arp req: ", str(Ether(frame)))
+
+
 
       # Step 3: send frame & queue this packet along with interface & next_hop ip addr
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
