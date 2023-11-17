@@ -12,7 +12,7 @@ from cougarnet.util import \
         ip_str_to_binary, ip_binary_to_str
 
 from forwarding_table import ForwardingTable
-from scapy.all import Ether, IP, ARP, TCP, UDP
+from scapy.all import Ether, IP, ARP
 
 # From /usr/include/linux/if_ether.h:
 ETH_P_IP = 0x0800 # Internet Protocol packet
@@ -28,13 +28,13 @@ IPPROTO_ICMP = 1 # Internet Control Message Protocol
 IPPROTO_TCP = 6 # Transmission Control Protocol
 IPPROTO_UDP = 17 # User Datagram Protocol
 
-import json
-
 # Additional constants I included
 BROADCAST_MAC = "ff:ff:ff:ff:ff:ff" 
 DEFAULT_TARGET_MAC = "00:00:00:00:00:00"
 ARP_ADDR_SZ = 6
 IPV4_ADDR_SZ = 4
+
+import json
 
 class Host(BaseHost):
   def __init__(self, ip_forward: bool):
@@ -52,6 +52,8 @@ class Host(BaseHost):
 
     for prefix, intf, next_hop in routes:
        self.forwarding_table.add_entry(prefix, intf, next_hop)
+
+    print(str(self.forwarding_table))
 
     for intf in self.physical_interfaces:
         prefix = '%s/%d' % \
@@ -82,34 +84,21 @@ class Host(BaseHost):
     #Parse out all destination IP address in the packet
     for intf1 in self.int_to_info:
         all_addrs += self.int_to_info[intf1].ipv4_addrs
-    print(str(all_addrs))
 
     #Determine if this host is the final destination for the packet, based on the destination IP address
     if ip.dst == '255.255.255.255' or ip.dst in all_addrs:
-      #TODO: If the packet is destined for this host, based on the tests in the previous bullet, then call another method to handle the payload, depending on the protocol value in the IP header.
-      #Hint: For type TCP (IPPROTO_TCP = 6), call handle_tcp(), passing the full IP datagram, including header.
-      #Hint: For type UDP (IPPROTO_UDP = 17), call handle_udp(), passing the full IP datagram, including header. Note that if the protocol is something other than TCP or UDP, you can simply ignore it.  
-        
         if ip.proto == IPPROTO_TCP:
-
-           print("IP Dst: ", ip.dst, " --> Interface: ", intf)
            self.handle_tcp(pkt)
         elif ip.proto == IPPROTO_UDP:
-           print("IP Dst: ", ip.dst, " --> Interface: ", intf)
 
            self.handle_udp(pkt)
     else:
-      #TODO: If the destination IP address does not match any IP address on the system, and it is not the IP broadcast, then call not_my_packet(), passing it the full IP datagram and the interface on which it arrived.
       self.not_my_packet(pkt, intf)
     
   def handle_tcp(self, pkt: bytes) -> None:
-      pkt = TCP(pkt)
-      
       pass
 
   def handle_udp(self, pkt: bytes) -> None:
-      pkt = UDP(pkt)
-
       pass
 
   def handle_arp(self, pkt: bytes, intf: str) -> None:
@@ -117,10 +106,9 @@ class Host(BaseHost):
 
     if arp.op == ARPOP_REQUEST:
       self.handle_arp_request(pkt, intf)
-    else:
+    elif arp.op == ARPOP_REPLY:
       self.handle_arp_response(pkt, intf)
    
-
   def handle_arp_response(self, pkt: bytes, intf: str) -> None:
       pkt = ARP(pkt)
       self._arp_table[pkt.psrc] = pkt.hwsrc
@@ -138,7 +126,7 @@ class Host(BaseHost):
       if pkt.pdst == intf_info.ipv4_addrs[0]:
         self._arp_table[pkt.psrc] = pkt.hwsrc
 
-        sender_ip, target_ip = intf_info.ipv4_addrs[0], pkt.psrc # Reversed the sender & target ips
+        sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
@@ -147,23 +135,20 @@ class Host(BaseHost):
         self.send_frame(bytes(frame), intf) 
 
   def send_packet_on_int(self, pkt: bytes, intf: str, next_hop: str) -> None:
-    
     if next_hop in self._arp_table: # Build ethernet frame right away
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
       dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
-      src_mac_addr = self.int_to_info[intf].mac_addr
       type_ip = ETH_P_IP
-      frame = self.create_eth_frame(dst_mac_addr, src_mac_addr, type_ip, ETH_P_IP, pkt)
+      frame = self.create_eth_frame(dst_mac_addr, type_ip, ETH_P_IP, pkt)
+
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
     else: # Build ethernet frame with ARP request
       # Step 1: create ARP request from interface info
-      intf_info = self.int_to_info.get(intf) # Type - InterfaceInfo
+      intf_info = self.int_to_info[intf] # Type - InterfaceInfo
 
-      # TODO: determine if these are in correct form (i.e byte OR string)
       sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
       target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
-
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
 
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
@@ -171,6 +156,7 @@ class Host(BaseHost):
       src_mac_addr = sender_mac
 
       frame = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_ARP, arp_req) # TODO: figure out if payload needs to be raw bytes
+      print(str(frame))
 
       # Step 3: send frame & queue this packet along with interface & next_hop ip addr
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
@@ -184,8 +170,6 @@ class Host(BaseHost):
           next_hop = ip.dst
       if intf is None:
           return
-      
-    #   print("Prefix: ", ip.dst, " | Interface: ", intf, " | Next hop: ", next_hop)
       self.send_packet_on_int(pkt, intf, next_hop)
 
   def forward_packet(self, pkt: bytes) -> None:
@@ -208,17 +192,19 @@ class Host(BaseHost):
 
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
-    return ARP(
-                hwtype=ARPHRD_ETHER, 
-                ptype=ETH_P_IP, 
-                hwlen=ARP_ADDR_SZ,
-                plen=IPV4_ADDR_SZ,
-                op=code,
-                hwsrc=send_mac,
-                psrc=send_ip, 
-                hwdst=tar_mac,
-                pdst=tar_ip
+    arp_pkt = ARP(
+                  hwtype=ARPHRD_ETHER, 
+                  ptype=ETH_P_IP, 
+                  hwlen=ARP_ADDR_SZ,
+                  plen=IPV4_ADDR_SZ,
+                  op=code,
+                  hwsrc=send_mac,
+                  psrc=send_ip, 
+                  hwdst=tar_mac,
+                  pdst=tar_ip
               )
+    print(str(arp_pkt))
+    return arp_pkt
   
   def create_eth_frame(self, dst_mac, src_mac, type, payload): # TODO: figure out how-to-build frame
      frame = Ether(
@@ -226,7 +212,8 @@ class Host(BaseHost):
                     src=src_mac,
                     type=type
                   )
-     
+     print(str(frame))
+     print(str(frame / payload))
      return frame / payload # TODO: figure out if I need to attach anything before the payload (ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
 
 def main():
