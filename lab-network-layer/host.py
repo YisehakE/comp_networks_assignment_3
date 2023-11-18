@@ -54,23 +54,18 @@ class Host(BaseHost):
     for prefix, intf, next_hop in routes:
        self.forwarding_table.add_entry(prefix, intf, next_hop)
 
-    print(str(self.forwarding_table))
-
     for intf in self.physical_interfaces:
         prefix = '%s/%d' % \
                 (self.int_to_info[intf].ipv4_addrs[0],
                 self.int_to_info[intf].ipv4_prefix_len)
         self.forwarding_table.add_entry(prefix, intf, None)
 
-
       # do any additional initialization here
 
 
   def _handle_frame(self, frame: bytes, intf: str) -> None:
     eth = Ether(frame)
-    if eth.dst == 'ff:ff:ff:ff:ff:ff' or \
-            eth.dst == self.int_to_info[intf].mac_addr:
-
+    if eth.dst == 'ff:ff:ff:ff:ff:ff' or eth.dst == self.int_to_info[intf].mac_addr:
         if eth.type == ETH_P_IP:
             self.handle_ip(bytes(eth.payload), intf)
         elif eth.type == ETH_P_ARP:
@@ -91,7 +86,6 @@ class Host(BaseHost):
         if ip.proto == IPPROTO_TCP:
            self.handle_tcp(pkt)
         elif ip.proto == IPPROTO_UDP:
-
            self.handle_udp(pkt)
     else:
       self.not_my_packet(pkt, intf)
@@ -127,12 +121,11 @@ class Host(BaseHost):
       if pkt.pdst == intf_info.ipv4_addrs[0]:
         self._arp_table[pkt.psrc] = pkt.hwsrc
 
-        sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
+        sender_ip, target_ip = self.int_to_info[intf].ipv4_addrs[0], pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
         eth = self.create_eth_frame(target_mac, sender_mac, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
-        
         frame = eth / arp_resp
 
         self.send_frame(bytes(frame), intf) 
@@ -167,9 +160,8 @@ class Host(BaseHost):
 
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
       dst_mac_addr = BROADCAST_MAC # TODO: determine correct form of mac address (i.e bytes or string)
-      src_mac_addr = sender_mac
 
-      eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
+      eth = self.create_eth_frame(dst_mac_addr, sender_mac, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
       frame = eth / arp_req
       print("(REG) Send on int | Frame w/ arp req: ", str(frame))
       print("(BYTES) Send on int | Frame w/ arp req: ", bytes(frame))
@@ -211,14 +203,6 @@ class Host(BaseHost):
 
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
-
-    # arp_pkt = b''
-
-    # arp_pkt += struct.pack("!B", )
-    # arp_pkt += struct.pack("!B", )
-    # arp_pkt += struct.pack("!B", )
-    # arp_pkt += struct.pack("!B", )
-
     arp_pkt = ARP(
                   hwtype=ARPHRD_ETHER, 
                   ptype=ETH_P_IP, 
