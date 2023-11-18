@@ -140,12 +140,18 @@ class DVRouter(BaseHost):
 
     #TODO: Complete the for loop. NOTE: don't try to add a route for local
     for neighbor in self.neighbor_dvs:
+
+      if neighbor in dv: print("Neighbor - ", neighbor, " is apart of this host - ", self.hostname, " local prefixes")
       dv[neighbor] = 1
             
       for addr in self.neighbor_dvs[neighbor]:
         if addr in dv:
           print("Cost at address: ", addr, " || DV - ", self.hostname, ": ", dv[addr], " VS Neighbor - ", neighbor, ": ", self.neighbor_dvs[neighbor][addr])
-          dv[addr] = min(dv[addr], 1 + self.neighbor_dvs[neighbor][addr])
+          if 1 + self.neighbor_dvs[neighbor][addr] < dv[addr]:
+            dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
+            forwarding_table[addr] = neighbor
+
+
           
     if dv == self.my_dv:
       send_new_dv = False
