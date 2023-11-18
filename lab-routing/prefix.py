@@ -137,7 +137,7 @@ def ip_prefix_mask(family, prefix_len):
     '''
 
     isIPv4 = family == socket.AF_INET
-    return all_ones(prefix_len) << (20 - prefix_len) if isIPv4 else all_ones(prefix_len) << (128 - prefix_len) 
+    return all_ones(prefix_len) << (32 - prefix_len) if isIPv4 else all_ones(prefix_len) << (128 - prefix_len) 
 
 def ip_prefix(address, family, prefix_len):
     '''Return the prefix for the given IP address, address family, and
