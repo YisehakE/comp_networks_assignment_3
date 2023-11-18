@@ -156,7 +156,6 @@ class Host(BaseHost):
       self.pending.append((pkt, next_hop, intf))
 
   def send_packet(self, pkt: bytes) -> None:
-      print(f'Attempting to send packet:\n{repr(pkt)}')
       ip = IP(pkt)
       intf, next_hop = self.forwarding_table.get_entry(ip.dst)
       if next_hop is None:

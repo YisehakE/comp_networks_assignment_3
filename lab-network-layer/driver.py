@@ -168,7 +168,7 @@ class Lab2Tester:
         return self.evaluate_lines(output_lines)
 
 class Scenario1(Lab2Tester):
-    cmd = ['cougarnet', '--stop=22', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=100', '--disable-ipv6',
             '--terminal=none', 'scenario1.cfg']
 
     expected_observations = [
