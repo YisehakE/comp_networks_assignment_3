@@ -153,11 +153,11 @@ class DVRouter(BaseHost):
           if 1 + self.neighbor_dvs[neighbor][addr] < dv[addr]:
             print("Neighbor is less than")
             dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
-            forwarding_table[addr] = self._neighbor_name_to_ip(neighbor)
+            forwarding_table[addr] = self._neighbor_name_to_ip[neighbor]
         else:
           print("NOT IN DVCost at address:  Neighbor - ", neighbor, ": ", self.neighbor_dvs[neighbor][addr] + 1)
           dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
-          forwarding_table[addr] = self._neighbor_name_to_ip(neighbor)
+          forwarding_table[addr] = self._neighbor_name_to_ip[neighbor]
           
     if dv == self.my_dv:
       send_new_dv = False
