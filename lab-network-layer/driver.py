@@ -189,7 +189,7 @@ class Scenario1(Lab2Tester):
             ]
 
 class Scenario2(Lab2Tester):
-    cmd = ['cougarnet', '--stop=22', '--disable-ipv6',
+    cmd = ['cougarnet', '--stop=100', '--disable-ipv6',
             '--terminal=none', 'scenario2.cfg']
 
     expected_observations = [
