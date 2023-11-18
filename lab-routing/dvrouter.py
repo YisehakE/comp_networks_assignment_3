@@ -79,8 +79,9 @@ class DVRouter(BaseHost):
     self.neighbor_dvs[neighbor_name] = neighbor_dv
 
     if neighbor_name in self._link_down_alarm:
-        '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
-        self.neighbor_dvs[neighbor_name] = neighbor_dv # The router/link is back up and running
+      '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
+      self._link_down_alarm[neighbor_name].cancel()
+      del self._link_down_alarm[neighbor_name]
 
     loop = asyncio.get_event_loop()
 
@@ -139,31 +140,21 @@ class DVRouter(BaseHost):
     forwarding_table = {}
 
     # TODO: get neighboring costs
-    neighbor_costs = [(neighbor) for neighbor_name, neighbor_dv in self.neighbor_dvs] # TODO: Not sure what neighboring costs is
+    neighbor_costs = dict( [ (neighbor_name, neighbor_dv[self.hostname]) for neighbor_name, neighbor_dv in self.neighbor_dvs ] )
 
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
 
     #TODO: Complete the for loop. NOTE: don't try to add a route for local
     for neighbor in self.neighbor_dvs:
-      min_dist = float("inf")
-      min_neighbor = None
-      for v, v_dv in self.neighbor_dvs[neighbor].items():
-        curr_cost = 1 + v_dv[neighbor]
-        if curr_cost < min_dist:
-          min_dist = curr_cost
-          min_neighbor = v
-      
-      forwarding_table[self.hostname] = min_neighbor # TODO: figure out if this is what I do 
-      dv[self.hostname] = min_dist # TODO: figure out if this is even right
-
-      # Check if neighbor is part of DV prefixes (not sure if this is logically sound)
-      if neighbor not in dv: 
-        print("Neighbor not in DV's populated dict")
-      else:
-        print("Neighbor is in DV's populated dict")
-      dv[self.hostname] = min_dist
-    
+      dv[neighbor] = 1
+            
+      for addr in self.neighbor_dvs[neighbor]:
+        if addr in dv:
+          dv[addr] = min(dv[addr], 1 +self.neighbor_dvs[neighbor])
+        else:
+          dv[addr] = self.neighbor_dvs[neighbor] + 1
+          
     if dv == self.my_dv:
       send_new_dv = False
     else:
