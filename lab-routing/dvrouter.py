@@ -129,34 +129,22 @@ class DVRouter(BaseHost):
 
   def update_dv(self) -> None:
     forwarding_table = {}
-
-
-    ##################################################### EVERYTHING ABOVE IS GIVEN
+    
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
 
-    #TODO: Complete the for loop. NOTE: don't try to add a route for local
     for neighbor in self.neighbor_dvs:
       table = self.neighbor_dvs[neighbor]
 
-      print("Neighbor: ", neighbor)
       for addr in table:
-        print("Address: ", addr)
         if addr in dv:
           if 1 + table[addr] < dv[addr]:
             dv[addr] = 1 + table[addr] # Update dv to shorter route cost
-
-            print("Neighbor name to address for neighbor - ", neighbor, "Address: ", self._neighbor_name_to_ip[neighbor])
             forwarding_table[addr] = self._neighbor_name_to_ip[neighbor] # Reflect update in forwarding table for next hop
         else:
           dv[addr] = 1 + table[addr]
-
-          print("Neighbor name to address for neighbor - ", neighbor, "Address: ", self._neighbor_name_to_ip[neighbor])
           forwarding_table[addr] = self._neighbor_name_to_ip[neighbor]
           
-
-    ############################################ EVERYTHING BELOW IS GIVEN
-
     if dv == self.my_dv:
       send_new_dv = False
     else:
