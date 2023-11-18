@@ -139,15 +139,20 @@ class DVRouter(BaseHost):
     for neighbor in self.neighbor_dvs:
       table = self.neighbor_dvs[neighbor]
 
-      print(neighbor)
+      print("Neighbor: ", neighbor)
       for addr in table:
+        print("Address: ", addr)
         if addr in dv:
           if 1 + table[addr] < dv[addr]:
             dv[addr] = 1 + table[addr] # Update dv to shorter route cost
-            forwarding_table[addr] = neighbor # Reflect update in forwarding table for next hop
+
+            print("Neighbor name to address for neighbor - ", neighbor, "Address: ", self._neighbor_name_to_ip[neighbor])
+            forwarding_table[addr] = self._neighbor_name_to_ip[neighbor] # Reflect update in forwarding table for next hop
         else:
           dv[addr] = 1 + table[addr]
-          forwarding_table[addr] = neighbor
+
+          print("Neighbor name to address for neighbor - ", neighbor, "Address: ", self._neighbor_name_to_ip[neighbor])
+          forwarding_table[addr] = self._neighbor_name_to_ip[neighbor]
           
 
     ############################################ EVERYTHING BELOW IS GIVEN
