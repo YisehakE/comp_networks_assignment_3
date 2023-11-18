@@ -142,8 +142,7 @@ class Host(BaseHost):
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
       dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
       src_mac_addr = self.int_to_info[intf].mac_addr
-      type_ip = ETH_P_IP
-      eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, type_ip, ETH_P_IP)
+      eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_IP)
       frame = eth / IP(pkt)
 
       print("(REG) Send on int | ip pkt: ", pkt)
