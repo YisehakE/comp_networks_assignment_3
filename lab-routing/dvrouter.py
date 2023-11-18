@@ -64,28 +64,19 @@ class DVRouter(BaseHost):
 
   def handle_dv_message(self, msg: bytes) -> None:
     d = json.loads(msg.decode('utf-8'))
-    '''TODO: assign values to neighbor_name, neighbor_ip, and neighbor_dv'''
-    '''neighbor_name = '''
-    '''neighbor_ip = '''
-    
-    ''' End TODO'''
     neighbor_name, neighbor_ip, neighbor_dv = d["name"], d["ip"], d["dv"]
     
-    if neighbor_name == self.hostname:
-        return
+    if neighbor_name == self.hostname: return
 
-    '''TODO: Assign values to self._neighbor_name_to_ip and self.neighbor_dvs '''
     self._neighbor_name_to_ip[neighbor_name] = neighbor_ip
     self.neighbor_dvs[neighbor_name] = neighbor_dv
 
     if neighbor_name in self._link_down_alarm:
-      '''TODO: Fill in what should happen if the if statement is true. This is the second time you've seen this neighbor in a certain period of time. You might have to check the asyncio library.'''
       self._link_down_alarm[neighbor_name].cancel()
       del self._link_down_alarm[neighbor_name]
 
     loop = asyncio.get_event_loop()
 
-    '''TODO: Fill in the appropriate arguments. Hint: there are 3. Pessimistically believing that I will never see this neighbor again. You might have to check the asyncio library.'''
     self._link_down_alarm[neighbor_name] = loop.call_later(NEIGHBOR_CHECK_INTERVAL, self.handle_down_link, neighbor_name)
 
 
@@ -140,7 +131,9 @@ class DVRouter(BaseHost):
     forwarding_table = {}
 
     # TODO: get neighboring costs
-    # neighbor_costs = dict( [ (neighbor_name, neighbor_dv[self.hostname]) for neighbor_name, neighbor_dv in self.neighbor_dvs.items() ] )
+    neighbor_costs = {}
+    for neighbor_ip, cost in self.my_dv.items():
+      neighbor_costs[neighbor_ip] = cost
 
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
@@ -151,9 +144,8 @@ class DVRouter(BaseHost):
             
       for addr in self.neighbor_dvs[neighbor]:
         if addr in dv:
+          print("Cost at address: ", addr, " || DV - ", self.hostname, ": ", dv[addr], " VS Neighbor - ", neighbor, ": ", self.neighbor_dvs[neighbor][addr])
           dv[addr] = min(dv[addr], 1 + self.neighbor_dvs[neighbor][addr])
-        else:
-          dv[addr] = self.neighbor_dvs[neighbor][addr] + 1
           
     if dv == self.my_dv:
       send_new_dv = False
