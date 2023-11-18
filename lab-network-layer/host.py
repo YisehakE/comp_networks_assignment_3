@@ -144,7 +144,7 @@ class Host(BaseHost):
       self.send_frame(bytes(frame), intf)
     else: # Build ethernet frame with ARP request
       # Step 1: queue this packet along with interface & next_hop, then reate ARP request from interface info
-      self.pending.append((pkt, intf, next_hop))
+      self.pending.append((pkt, next_hop, intf))
 
       intf_info = self.int_to_info[intf] 
       sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
