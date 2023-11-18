@@ -151,9 +151,9 @@ class DVRouter(BaseHost):
             
       for addr in self.neighbor_dvs[neighbor]:
         if addr in dv:
-          dv[addr] = min(dv[addr], 1 + self.neighbor_dvs[neighbor])
+          dv[addr] = min(dv[addr], 1 + self.neighbor_dvs[neighbor][addr])
         else:
-          dv[addr] = self.neighbor_dvs[neighbor] + 1
+          dv[addr] = self.neighbor_dvs[neighbor][addr] + 1
           
     if dv == self.my_dv:
       send_new_dv = False
