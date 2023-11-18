@@ -120,7 +120,7 @@ class Host(BaseHost):
       if pkt.pdst == intf_info.ipv4_addrs[0]:
         self._arp_table[pkt.psrc] = pkt.hwsrc # Update the ARP table
 
-        sender_ip, target_ip = intf_info.int_to_info[intf].ipv4_addrs[0], pkt.psrc # Reversed the sender & target ips
+        sender_ip, target_ip = intf_info.ipv4_addrs[0], pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
