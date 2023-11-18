@@ -151,8 +151,7 @@ class Host(BaseHost):
       eth = self.create_eth_frame(BROADCAST_MAC, sender_mac, ETH_P_ARP)
       frame = eth / arp_req
 
-      # Step 3: send frame in bytes and queue this packet along w/ interface & next_hop address
-      self.send_frame(bytes(frame), intf)
+      # Step 3: queue this packet along w/ interface & next_hop address
       self.pending.append((pkt, next_hop, intf))
 
   def send_packet(self, pkt: bytes) -> None:
