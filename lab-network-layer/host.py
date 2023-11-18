@@ -130,7 +130,9 @@ class Host(BaseHost):
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
-        frame = self.create_eth_frame(target_mac, pkt.hwsrc, ETH_P_ARP, arp_resp) # TODO: figure out if payload needs to be raw bytes
+        eth = self.create_eth_frame(target_mac, sender_mac, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
+        
+        frame = eth / arp_resp
 
         self.send_frame(bytes(frame), intf) 
 
@@ -139,7 +141,8 @@ class Host(BaseHost):
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
       dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
       type_ip = ETH_P_IP
-      frame = self.create_eth_frame(dst_mac_addr, type_ip, ETH_P_IP, pkt)
+      eth = self.create_eth_frame(dst_mac_addr, type_ip, ETH_P_IP)
+      frame = eth / IP(pkt)
 
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
@@ -161,7 +164,8 @@ class Host(BaseHost):
       dst_mac_addr = BROADCAST_MAC # TODO: determine correct form of mac address (i.e bytes or string)
       src_mac_addr = sender_mac
 
-      frame = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_ARP, arp_req) # TODO: figure out if payload needs to be raw bytes
+      eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
+      frame = eth / arp_req
       print("(REG) Send on int | Frame w/ arp req: ", str(frame))
       print("(BYTES) Send on int | Frame w/ arp req: ", bytes(frame))
       print("(TRANS) Send on int | Frame w/ arp req: ", str(Ether(frame)))
@@ -202,6 +206,7 @@ class Host(BaseHost):
 
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
+
     arp_pkt = ARP(
                   hwtype=ARPHRD_ETHER, 
                   ptype=ETH_P_IP, 
@@ -213,18 +218,18 @@ class Host(BaseHost):
                   hwdst=tar_mac,
                   pdst=tar_ip
               )
-    print(str(arp_pkt))
+    print("Create arp | packet: ", str(arp_pkt))
     return arp_pkt
   
-  def create_eth_frame(self, dst_mac, src_mac, type, payload): # TODO: figure out how-to-build frame
-     frame = Ether(
-                    dst=dst_mac,
-                    src=src_mac,
-                    type=type
-                  )
-     print(str(frame))
-     print(str(frame / payload))
-     return frame / payload # TODO: figure out if I need to attach anything before the payload (ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
+  def create_eth_frame(self, dst_mac, src_mac, type): # TODO: figure out how-to-build frame
+    frame = Ether(
+                dst=dst_mac,
+                src=src_mac,
+                type=type
+              )
+    print("Create eth | frame: ", str(frame))
+  
+    return frame # TODO: figure out if I need to attach anything before the payload (ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
 
 def main():
     parser = argparse.ArgumentParser()
