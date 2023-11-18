@@ -154,7 +154,7 @@ class DVRouter(BaseHost):
             dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
             forwarding_table[addr] = neighbor
         else:
-            dv[addr] = 1 + self.neighbor_dvs[neighbor][addr] + 1
+            dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
 
 
           
