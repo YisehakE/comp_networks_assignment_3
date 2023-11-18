@@ -35,6 +35,7 @@ ARP_ADDR_SZ = 6
 IPV4_ADDR_SZ = 4
 
 import json
+import struct
 
 class Host(BaseHost):
   def __init__(self, ip_forward: bool):
@@ -145,6 +146,10 @@ class Host(BaseHost):
       eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, type_ip, ETH_P_IP)
       frame = eth / IP(pkt)
 
+      print("(REG) Send on int | ip pkt: ", pkt)
+      print("(BYTES) Send on int | ip pkt: ", bytes(pkt))
+      print("(TRANS) Send on int | ip pkt from bytes to ip", str(IP(pkt)))
+
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
     else: # Build ethernet frame with ARP request
@@ -207,6 +212,10 @@ class Host(BaseHost):
 
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
+
+    arp_pkt = b''
+
+    arp_pkt += struct.pack()
 
     arp_pkt = ARP(
                   hwtype=ARPHRD_ETHER, 
