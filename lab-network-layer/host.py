@@ -135,7 +135,10 @@ class Host(BaseHost):
       dst_mac_addr = self._arp_table[next_hop]
       src_mac_addr = self.int_to_info[intf].mac_addr
       eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_IP)
-      frame = eth / IP(pkt)
+      pkt = IP(pkt)
+      frame = eth / pkt
+
+      frame.show()
 
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf)
@@ -151,6 +154,8 @@ class Host(BaseHost):
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
       eth = self.create_eth_frame(BROADCAST_MAC, sender_mac, ETH_P_ARP)
       frame = eth / arp_req
+
+      frame.show()
 
       # Step 3: send frame in bytes
       self.send_frame(bytes(frame), intf)
