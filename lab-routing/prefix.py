@@ -224,10 +224,6 @@ def ip_prefix_nth_address(prefix, family, prefix_len, n):
     '0x20010db80000ffff00000000000000ff'
     '''
 
-    #FIXME
-
-    mask = ip_prefix_mask(family, prefix_len)
-
     return prefix | n
 
 def ip_prefix_last_address(prefix, family, prefix_len):
@@ -260,8 +256,8 @@ def ip_prefix_last_address(prefix, family, prefix_len):
     '0x20010db800000000ffffffffffffffff'
     '''
 
-    remaining_bits = 32 - prefix_len if family == socket.AF_INET else 128 - prefix_len
-    return ip_prefix_nth_address(prefix, family, prefix_len, 2**remaining_bits - 1)
+    n = ip_prefix_total_addresses(family, prefix_len)
+    return ip_prefix_nth_address(prefix, family, prefix_len, n - 1)
 
 
 class Prefix:
