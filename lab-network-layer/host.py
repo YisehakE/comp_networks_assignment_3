@@ -213,9 +213,12 @@ class Host(BaseHost):
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
 
-    arp_pkt = b''
+    # arp_pkt = b''
 
-    arp_pkt += struct.pack()
+    # arp_pkt += struct.pack("!B", )
+    # arp_pkt += struct.pack("!B", )
+    # arp_pkt += struct.pack("!B", )
+    # arp_pkt += struct.pack("!B", )
 
     arp_pkt = ARP(
                   hwtype=ARPHRD_ETHER, 
