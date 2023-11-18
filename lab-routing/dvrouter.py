@@ -140,7 +140,7 @@ class DVRouter(BaseHost):
     forwarding_table = {}
 
     # TODO: get neighboring costs
-    neighbor_costs = dict( [ (neighbor_name, neighbor_dv[self.hostname]) for neighbor_name, neighbor_dv in self.neighbor_dvs.items() ] )
+    # neighbor_costs = dict( [ (neighbor_name, neighbor_dv[self.hostname]) for neighbor_name, neighbor_dv in self.neighbor_dvs.items() ] )
 
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
