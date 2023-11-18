@@ -132,8 +132,8 @@ class DVRouter(BaseHost):
 
     # TODO: get neighboring costs
     neighbor_costs = {}
-    for neighbor_ip, cost in self.my_dv.items():
-      neighbor_costs[neighbor_ip] = cost
+    # for neighbor_ip, cost in self.my_dv.items():
+    #   neighbor_costs[neighbor_ip] = cost
 
     # initialize DV with distance 0 to own IP addresses
     dv = dict( [ (intinfo.ipv4_addrs[0], 0) for intinfo in self.int_to_info.values() if intinfo.ipv4_addrs] )
@@ -141,10 +141,10 @@ class DVRouter(BaseHost):
     #TODO: Complete the for loop. NOTE: don't try to add a route for local
     for neighbor in self.neighbor_dvs:
 
-      if neighbor in dv: 
-        print("Neighbor - ", neighbor, " is apart of this host - ", self.hostname, " local prefixes")
-      else:
-        print("Neighbor - ", neighbor, " is NOT local to this host - ", self.hostname, " prefixes")
+      # if neighbor in dv: 
+      #   print("Neighbor - ", neighbor, " is apart of this host - ", self.hostname, " local prefixes")
+      # else:
+      #   print("Neighbor - ", neighbor, " is NOT local to this host - ", self.hostname, " prefixes")
       dv[neighbor] = 1
             
       for addr in self.neighbor_dvs[neighbor]:
@@ -153,13 +153,11 @@ class DVRouter(BaseHost):
           if 1 + self.neighbor_dvs[neighbor][addr] < dv[addr]:
             print("Neighbor is less than")
             dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
-            forwarding_table[addr] = neighbor
+            forwarding_table[addr] = self._neighbor_name_to_ip(neighbor)
         else:
           print("NOT IN DVCost at address:  Neighbor - ", neighbor, ": ", self.neighbor_dvs[neighbor][addr] + 1)
           dv[addr] = 1 + self.neighbor_dvs[neighbor][addr]
-            
-
-
+          forwarding_table[addr] = self._neighbor_name_to_ip(neighbor)
           
     if dv == self.my_dv:
       send_new_dv = False
