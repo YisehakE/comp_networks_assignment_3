@@ -130,23 +130,19 @@ class Host(BaseHost):
         self.send_frame(bytes(frame), intf) 
 
   def send_packet_on_int(self, pkt: bytes, intf: str, next_hop: str) -> None:
-    if next_hop in self._arp_table: # Build ethernet frame right away
+    if next_hop in self._arp_table: # Build ethernet frame right away with IP packet
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
-      dst_mac_addr = self._arp_table[next_hop]
-      src_mac_addr = self.int_to_info[intf].mac_addr
+      dst_mac_addr, src_mac_addr = self._arp_table[next_hop], self.int_to_info[intf].mac_addr
       eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_IP)
       pkt = IP(pkt)
       frame = eth / pkt
 
-      frame.show()
-
       # Step 2: send the frame as byte object along with given interface
       self.send_frame(bytes(frame), intf)
-    else: # Build ethernet frame with ARP request
-      # Step 1: queue this packet along with interface & next_hop, then reate ARP request from interface info
-      self.pending.append((pkt, next_hop, intf))
-
+    else: # Build ethernet frame with ARP request as payload
+      # Step 1: Create ARP request from interface info
       intf_info = self.int_to_info[intf] 
+
       sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
       target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
@@ -155,10 +151,9 @@ class Host(BaseHost):
       eth = self.create_eth_frame(BROADCAST_MAC, sender_mac, ETH_P_ARP)
       frame = eth / arp_req
 
-      frame.show()
-
-      # Step 3: send frame in bytes
+      # Step 3: send frame in bytes and queue this packet along w/ interface & next_hop address
       self.send_frame(bytes(frame), intf)
+      self.pending.append((pkt, next_hop, intf))
 
   def send_packet(self, pkt: bytes) -> None:
       print(f'Attempting to send packet:\n{repr(pkt)}')
@@ -181,7 +176,6 @@ class Host(BaseHost):
       pass
 
   def not_my_packet(self, pkt: bytes, intf: str) -> None:
-      #return #XXX
       if self._ip_forward:
           self.forward_packet(pkt)
       else:
@@ -190,30 +184,24 @@ class Host(BaseHost):
 
   # Additional helper functions I included
   def create_arp(self, code, send_mac, send_ip, tar_mac, tar_ip): 
-    arp_pkt = ARP(
-                  hwtype=ARPHRD_ETHER, 
-                  ptype=ETH_P_IP, 
-                  hwlen=ARP_ADDR_SZ,
-                  plen=IPV4_ADDR_SZ,
-                  op=code,
-                  hwsrc=send_mac,
-                  psrc=send_ip, 
-                  hwdst=tar_mac,
-                  pdst=tar_ip
-              )
-    print("Create arp | packet: ", str(arp_pkt))
-    arp_pkt.show()
-    return arp_pkt
+    return ARP(
+              hwtype=ARPHRD_ETHER, 
+              ptype=ETH_P_IP, 
+              hwlen=ARP_ADDR_SZ,
+              plen=IPV4_ADDR_SZ,
+              op=code,
+              hwsrc=send_mac,
+              psrc=send_ip, 
+              hwdst=tar_mac,
+              pdst=tar_ip
+            )
   
-  def create_eth_frame(self, dst_mac, src_mac, type): # TODO: figure out how-to-build frame
-    frame = Ether(
+  def create_eth_frame(self, dst_mac, src_mac, type):
+    return Ether(
                 dst=dst_mac,
                 src=src_mac,
                 type=type
-              )
-    print("Create eth | frame: ", str(frame))
-    frame.show()
-    return frame # TODO: figure out if I need to attach anything before the payload (ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
+            ) #(ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
 
 def main():
     parser = argparse.ArgumentParser()
