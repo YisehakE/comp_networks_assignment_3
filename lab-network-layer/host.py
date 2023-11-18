@@ -80,14 +80,14 @@ class Host(BaseHost):
     for intf1 in self.int_to_info:
         all_addrs += self.int_to_info[intf1].ipv4_addrs
 
-        #Determine if this host is the final destination for the packet, based on the destination IP address
-        if ip.dst == '255.255.255.255' or ip.dst in all_addrs:
-          if ip.proto == IPPROTO_TCP:
-            self.handle_tcp(pkt)
-          elif ip.proto == IPPROTO_UDP:
-            self.handle_udp(pkt)
-        else:
-          self.not_my_packet(pkt, intf)
+    #Determine if this host is the final destination for the packet, based on the destination IP address
+    if ip.dst == '255.255.255.255' or ip.dst in all_addrs:
+      if ip.proto == IPPROTO_TCP:
+        self.handle_tcp(pkt)
+      elif ip.proto == IPPROTO_UDP:
+        self.handle_udp(pkt)
+    else:
+      self.not_my_packet(pkt, intf)
       
   def handle_tcp(self, pkt: bytes) -> None:
       pass
@@ -115,16 +115,16 @@ class Host(BaseHost):
 
   def handle_arp_request(self, pkt: bytes, intf: str) -> None:
       pkt = ARP(pkt)
-
       intf_info = self.int_to_info[intf]
+
       if pkt.pdst == intf_info.ipv4_addrs[0]:
-        self._arp_table[pkt.psrc] = pkt.hwsrc
+        self._arp_table[pkt.psrc] = pkt.hwsrc # Update the ARP table
 
         sender_ip, target_ip = pkt.pdst, pkt.psrc # Reversed the sender & target ips
         sender_mac, target_mac = intf_info.mac_addr, pkt.hwsrc # Sender mac as interface src and target mac as sender src
 
         arp_resp = self.create_arp(ARPOP_REPLY, sender_mac, sender_ip, target_mac, target_ip)
-        eth = self.create_eth_frame(target_mac, sender_mac, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
+        eth = self.create_eth_frame(target_mac, sender_mac, ETH_P_ARP)
         frame = eth / arp_resp
 
         self.send_frame(bytes(frame), intf) 
@@ -132,44 +132,28 @@ class Host(BaseHost):
   def send_packet_on_int(self, pkt: bytes, intf: str, next_hop: str) -> None:
     if next_hop in self._arp_table: # Build ethernet frame right away
       # Step 1: build + send Ethernet frame with IP pkt given along with 2 other attributes:
-      dst_mac_addr = self._arp_table[next_hop] # TODO: determine correct form of dest. MAC address
+      dst_mac_addr = self._arp_table[next_hop]
       src_mac_addr = self.int_to_info[intf].mac_addr
       eth = self.create_eth_frame(dst_mac_addr, src_mac_addr, ETH_P_IP)
       frame = eth / IP(pkt)
 
-      print("(REG) Send on int | ip pkt: ", pkt)
-      print("(BYTES) Send on int | ip pkt: ", bytes(pkt))
-      print("(TRANS) Send on int | ip pkt from bytes to ip", str(IP(pkt)))
-
       # Step 2: send the frame as byte object along with given interface
-      self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
+      self.send_frame(bytes(frame), intf)
     else: # Build ethernet frame with ARP request
-      # Step 1: create ARP request from interface info
-      intf_info = self.int_to_info[intf] # Type - InterfaceInfo
+      # Step 1: queue this packet along with interface & next_hop, then reate ARP request from interface info
+      self.pending.append((pkt, intf, next_hop))
 
+      intf_info = self.int_to_info[intf] 
       sender_ip, sender_mac = intf_info.ipv4_addrs[0], intf_info.mac_addr
       target_ip, target_mac = next_hop, DEFAULT_TARGET_MAC
       arp_req = self.create_arp(ARPOP_REQUEST, sender_mac,sender_ip, target_mac, target_ip)
 
-      print("(REG) Send on int | arp req: ", str(arp_req))
-      print("(BYTES) Send on int | arp req: ", bytes(arp_req))
-      print("(TRANS) Send on int | arp packet from bytes to packet", str(ARP(bytes(arp_req))))
-
-
-
       # Step 2: build + send Ethernet frame with ARP request just created, along with 3 other attributes:
-      dst_mac_addr = BROADCAST_MAC # TODO: determine correct form of mac address (i.e bytes or string)
-
-      eth = self.create_eth_frame(BROADCAST_MAC, sender_mac, ETH_P_ARP) # TODO: figure out if payload needs to be raw bytes
+      eth = self.create_eth_frame(BROADCAST_MAC, sender_mac, ETH_P_ARP)
       frame = eth / arp_req
-      print("(REG) Send on int | Frame w/ arp req: ", str(frame))
-      print("(BYTES) Send on int | Frame w/ arp req: ", bytes(frame))
-      print("(TRANS) Send on int | Frame w/ arp req: ", str(Ether(frame)))
 
-
-      # Step 3: send frame & queue this packet along with interface & next_hop ip addr
-      self.send_frame(bytes(frame), intf) # TODO: figure out if wrapping in bytes object is necessary
-      self.pending.append((pkt, intf, next_hop))
+      # Step 3: send frame in bytes
+      self.send_frame(bytes(frame), intf)
 
   def send_packet(self, pkt: bytes) -> None:
       print(f'Attempting to send packet:\n{repr(pkt)}')
