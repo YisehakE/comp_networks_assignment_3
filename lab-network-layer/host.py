@@ -202,6 +202,7 @@ class Host(BaseHost):
                   pdst=tar_ip
               )
     print("Create arp | packet: ", str(arp_pkt))
+    arp_pkt.show()
     return arp_pkt
   
   def create_eth_frame(self, dst_mac, src_mac, type): # TODO: figure out how-to-build frame
@@ -211,7 +212,7 @@ class Host(BaseHost):
                 type=type
               )
     print("Create eth | frame: ", str(frame))
-  
+    frame.show()
     return frame # TODO: figure out if I need to attach anything before the payload (ref. https://stackoverflow.com/questions/6605118/adding-payload-in-packet)
 
 def main():
